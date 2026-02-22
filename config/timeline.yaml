@@ -390,7 +390,7 @@ presets:
 
 custom:
   name: "自定义"
-  description: "完全自由定义时间段、日计划和周映射。"
+  description: "周一到周五早8晚5双推，周六日静默收集，周一早8打包整个周末内容。"
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 默认配置
@@ -399,22 +399,14 @@ custom:
   # 时间段中没有写的字段，也会回退到这里。
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   default:
-    collect: true                  # 是否采集数据（爬取热榜 + RSS）
-    analyze: false                 # 是否执行 AI 分析
-    ai_mode: "current"            # AI 分析模式:
-                                   #   follow_report → 跟随 report_mode
-                                   #   daily         → 强制全天汇总
-                                   #   current       → 强制当前榜单
-                                   #   incremental   → 强制增量模式
-    push: false                    # 是否发送推送通知
-    report_mode: "current"         # 报告模式:
-                                   #   daily       → 当日所有新闻的汇总
-                                   #   current     → 当前在榜的新闻
-                                   #   incremental → 只推送新增内容
+    collect: true                  # 始终采集，确保周末数据持续积累
+    analyze: false
+    ai_mode: "current"
+    push: false                    # 默认不推送
+    report_mode: "daily"
     once:
-      analyze: true                # 该时间段内只分析一次（省 API）
-      push: true                   # 该时间段内只推送一次（省打扰）
-
+      analyze: true
+      push: true
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 第 1 步：定义积木块（时间段）
@@ -430,40 +422,28 @@ custom:
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   periods:
 
-    deep_quiet:
-      name: "深夜静默"
-      start: "23:00"
-      end: "06:00"                 # 23:00 → 次日 06:00（跨日时间段）
-      collect: true                # 夜间继续采集数据
-      analyze: true                # 夜间可以跑 AI 分析（反正不推送）
-      push: false                  # 深夜不推送，避免打扰
-
-    weekday_morning:
-      name: "工作日早间"
+    morning_push:
+      name: "早间推送"
       start: "08:00"
-      end: "10:00"                 # 跨度 2h，留足触发裕量
-      push: true                   # 早上推送一次
-      report_mode: "incremental"   # 只推新增内容
-      # once 继承 default（push: true）→ 窗口内只推一次
-
-    weekend_morning:
-      name: "周末早间"
-      start: "10:00"
-      end: "12:00"                 # 跨度 2h
+      end: "09:30"                 # 留 1.5h 裕量，确保触发
       push: true
-      report_mode: "daily"         # 周末看全天汇总
-      # once 继承 default（push: true）→ 窗口内只推一次
+      report_mode: "daily"         # daily = 自上次推送以来的全部内容
+                                   # 周一早8点时，上次推送是周五晚5点
+                                   # 所以会自动包含整个周末积累的内容
+      once:
+        analyze: false
+        push: true                 # 窗口内只推一次
 
-    evening_summary:
-      name: "晚间汇总"
-      start: "19:00"
-      end: "21:00"
-      analyze: true                # 晚间做 AI 分析
-      ai_mode: "daily"             # AI 也分析全天内容
-      push: true                   # 晚间推送
-      report_mode: "daily"         # 当日全部新闻汇总
-      # once 继承 default（analyze: true, push: true）→ 只分析/推送一次
-
+    evening_push:
+      name: "晚间推送"
+      start: "17:00"
+      end: "18:30"                 # 留 1.5h 裕量
+      push: true
+      report_mode: "incremental"   # incremental = 只推早8点之后的新增内容
+                                   # 避免和早上的内容重复
+      once:
+        analyze: false
+        push: true                 # 窗口内只推一次
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 第 2 步：把积木块拼成日计划
@@ -473,10 +453,10 @@ custom:
   # 然后在第 3 步的 week_map 中分配给不同的星期。
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   day_plans:
-    workday:                       # 工作日计划
-      periods: ["deep_quiet", "weekday_morning", "evening_summary"]
-    weekend:                       # 周末计划（用 weekend_morning 替换 weekday_morning）
-      periods: ["deep_quiet", "weekend_morning", "evening_summary"]
+    workday:                       # 工作日：早8 + 晚5
+      periods: ["morning_push", "evening_push"]
+    silent:                        # 周末：无时间段，全天走 default（只采集不推送）
+      periods: []
 
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -484,15 +464,14 @@ custom:
   #
   # 1=周一  2=周二  3=周三  4=周四  5=周五  6=周六  7=周日
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  week_map:
-    1: "workday"                   # 周一 → 工作日计划
-    2: "workday"                   # 周二
-    3: "workday"                   # 周三
-    4: "workday"                   # 周四
-    5: "workday"                   # 周五
-    6: "weekend"                   # 周六 → 周末计划
-    7: "weekend"                   # 周日
-
+   week_map:
+    1: "workday"                   # 周一 → 早8打包整个周末 + 晚5推新增
+    2: "workday"
+    3: "workday"
+    4: "workday"
+    5: "workday"
+    6: "silent"                    # 周六 → 静默收集
+    7: "silent"                    # 周日 → 静默收集
 
   # ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   # 冲突策略（一般不用改）
