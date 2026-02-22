@@ -181,6 +181,14 @@ platforms:
 # ===============================================================
 # 3. 数据源 - RSS 订阅
 #
+rss:
+  feeds:
+    - url: "https://feeds.bloomberg.com/markets/news.rss"
+      name: "彭博财经"
+    - url: "https://seekingalpha.com/feed.xml"
+      name: "Seeking Alpha"
+    - url: "https://feeds.reuters.com/reuters/businessNews"
+      name: "路透财经"
 # 与热榜数据分开存储，按时间流展示
 # 每个源配置：id(唯一标识)、name(显示名称)、url(订阅地址)
 # enabled: 可选，默认 true
