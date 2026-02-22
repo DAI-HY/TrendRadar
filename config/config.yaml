@@ -171,6 +171,7 @@ platforms:
   # - id: "linuxdo"
   #   name: "LinuxDo"        # 失败原因：接口可能已变更
 
+
 # ===============================================================
 # 3. 数据源 - RSS 订阅
 #
@@ -304,7 +305,7 @@ display:
   # 控制各区域是否启用（配合 region_order 使用）
   regions:
     hotlist: true                     # 热榜区域（关键词匹配的热点新闻）
-    new_items: false                   # 新增热点区域（含热榜新增 + RSS 新增）
+    new_items: false                  # 新增热点区域（含热榜新增 + RSS 新增）
                                       # 注：热点词汇统计中的新增标记🆕不受此配置影响
 
     rss: true                         # RSS 订阅区域
@@ -407,7 +408,7 @@ storage:
   formats:
     sqlite: true                      # 主存储（必须启用）
     txt: false                        # 是否生成 TXT 快照
-    html: true                       # 是否生成 HTML 报告（⚠️ 邮件推送或者需要看网页版报告必须设为 true）
+    html: true                        # 是否生成 HTML 报告（⚠️ 邮件推送或者需要看网页版报告必须设为 true）
 
   # 本地存储配置
   local:
@@ -556,8 +557,6 @@ ai_analysis:
                                     # 启用后 AI 能更精确分析热度趋势，但会额外增加 token 消耗（0.5 倍到 1 倍）
 
 
-
-
 # ===============================================================
 # 10. AI 翻译功能
 #
@@ -620,6 +619,3 @@ advanced:
     slack: 4000
   batch_send_interval: 3              # 批次发送间隔（秒）
   feishu_message_separator: "━━━━━━━━━━━━━━━━"
-
-  advanced:
-  debug: true   # ← 改这里
